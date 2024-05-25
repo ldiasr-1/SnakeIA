@@ -12,11 +12,10 @@ preto = (0, 0, 0)
 branco = (255, 255, 255)
 verde = (0, 255, 0)
 vermelho = (255, 0, 0)
-azul = (0, 0, 255)
-amarelo = (255, 255, 0)
 
 tamanho_quadrado = 20
-velocidade_jogo = 15
+velocidade_jogo = 60
+
 
 def gerar_comida(pixels):
     while True:
@@ -29,24 +28,20 @@ def desenhar_comida(tamanho, comida_x, comida_y):
     pygame.draw.rect(tela, vermelho, [comida_x, comida_y, tamanho, tamanho])
 
 def desenhar_cobra(tamanho, pixels):
-    for pixel in pixels:
-        pygame.draw.rect(tela, verde, [pixel[0], pixel[1], tamanho, tamanho])
+    # Verifica se há pelo menos um segmento na cobra
+    if pixels:
+        # Desenha a cabeça da cobra com uma cor diferente
+        pygame.draw.rect(tela, verde, [pixels[0][0], pixels[0][1], tamanho, tamanho])
+        
+        # Desenha o corpo da cobra com uma cor ligeiramente diferente
+        for pixel in pixels[1:]:
+            pygame.draw.rect(tela, (0, 200, 0), [pixel[0], pixel[1], tamanho, tamanho])
 
-def desenhar_pontos(pontuacao):
+
+def desenhar_texto(texto):
     fonte = pygame.font.SysFont("Arial", 25)
-    texto = fonte.render(f"Pontos: {pontuacao}", True, branco)
-    tela.blit(texto, [1, 1])
-
-def selecionar_velocidade(tecla):
-    if tecla == pygame.K_DOWN:
-        return 0, tamanho_quadrado
-    elif tecla == pygame.K_UP:
-        return 0, -tamanho_quadrado
-    elif tecla == pygame.K_RIGHT:
-        return tamanho_quadrado, 0
-    elif tecla == pygame.K_LEFT:
-        return -tamanho_quadrado, 0
-    return 0, 0
+    texto_renderizado = fonte.render(texto, True, branco)
+    tela.blit(texto_renderizado, [1, 1])
 
 class SnakeGame:
     def __init__(self):
@@ -58,7 +53,10 @@ class SnakeGame:
         self.tamanho_cobra = 1
         self.pixels = []
         self.comida_x, self.comida_y = gerar_comida(self.pixels)
+        self.steps_since_last_change = 0
+        self.max_steps_same_direction = 10
     
+
     def reset(self):
         self.__init__()
         return self.get_state()
@@ -111,24 +109,10 @@ class SnakeGame:
         ]
         return np.array(state, dtype=np.float32)
     
-    def render(self):
+    def render(self, generation):
         tela.fill(preto)
         desenhar_comida(tamanho_quadrado, self.comida_x, self.comida_y)
         desenhar_cobra(tamanho_quadrado, self.pixels)
-        desenhar_pontos(self.tamanho_cobra - 1)
+        desenhar_texto(f"Geração: {generation}")
         pygame.display.update()
-
-def main():
-    game = SnakeGame()
-    while True:
-        state = game.reset()
-        while True:
-            game.render()
-            action = random.choice([0, 1, 2, 3])
-            state, reward, done = game.step(action)
-            if done:
-                break
-            relogio.tick(velocidade_jogo)
-
-if __name__ == "__main__":
-    main()
+        relogio.tick(velocidade_jogo)
